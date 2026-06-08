@@ -1,0 +1,59 @@
+import sys
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+def perform_decryption(ciphertext_hex: str, nonce_hex: str, key_bytes: bytes):
+    """Attempts to decrypt hex data and prints detailed results."""
+    print("--- Decryption Process Started ---")
+    
+    # 1. Convert Hex strings back into raw bytes that the cipher understands
+    try:
+        ciphertext = bytes.fromhex(ciphertext_hex)
+        nonce = bytes.fromhex(nonce_hex)
+        print("[✓] Ciphertext and Nonce successfully parsed from Hex.")
+    except ValueError:
+        print("[X] Error: Failed to parse Hex strings. Check your input data.")
+        return
+
+    # 2. Initialize the AES-GCM cipher with our key
+    aesgcm = AESGCM(key_bytes)
+    
+    # 3. Attempt Decryption and Capture Results
+    try:
+        decrypted_bytes = aesgcm.decrypt(nonce, ciphertext, None)
+        
+        # 4. Format and display successful results
+        print("\n================ DECRYPTION SUCCESS ================")
+        print(f"Raw Decrypted Bytes (Hex): {decrypted_bytes.hex().upper()}")
+        
+        # Decode the bytes back into a human-readable UTF-8 string
+        decrypted_text = decrypted_bytes.decode('utf-8')
+        print(f"Decrypted Text Message:    {decrypted_text}")
+        print("====================================================\n")
+        
+    except Exception as e:
+        # Capture and display failure results (e.g., if data was tampered with)
+        print("\n================ DECRYPTION FAILED =================")
+        print("[X] Cryptographic Integrity Check Failed!")
+        print(f"Reason: {e}")
+        print("Note: The key/nonce might be wrong, or the ciphertext was altered.")
+        print("====================================================\n")
+
+if __name__ == "__main__":
+    # Simulate a predefined 256-bit key used during encryption
+    # (In a real scenario, this would be securely loaded)
+    shared_secret_key = bytes.fromhex("A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2E3F4A5B6C7D8E9F0A1B2")
+    
+    # CASE 1: Successful Decryption Simulation
+    # Simulated valid ciphertext and nonce generated from encrypting "Top Secret Message"
+    valid_nonce = "1234567890ABCDEF12345678"
+    valid_ciphertext = "87A69DB5A4D01D0CE78CBAEC1919639D907E59424E1FAD0CD2AAAC5D9C49A588147E"
+    
+    print("SIMULATION 1: Supplying Valid Encrypted Data")
+    perform_decryption(valid_ciphertext, valid_nonce, shared_secret_key)
+    
+    # CASE 2: Failed Decryption Simulation (Tampered Data)
+    # Changing just the very last character of the ciphertext from 'E' to '0'
+    tampered_ciphertext = "87A69DB5A4D01D0CE78CBAEC1919639D907E59424E1FAD0CD2AAAC5D9C49A5881470"
+    
+    print("SIMULATION 2: Supplying Tampered Encrypted Data")
+    perform_decryption(tampered_ciphertext, valid_nonce, shared_secret_key)

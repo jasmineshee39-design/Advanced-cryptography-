@@ -1,0 +1,5 @@
+try:
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    print("[✓] Success! The cryptography library is installed and ready to use.")
+except ImportError:
+    print("[X] Installation Failed. VS Code cannot find the 'cryptography' library.")

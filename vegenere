@@ -1,0 +1,52 @@
+def vigenere_cipher(text, keyword, mode='encrypt'):
+    """
+    Encrypts or decrypts text using the polyalphabetic Vigenère Cipher.
+    """
+    result = []
+    keyword = keyword.upper()
+    key_index = 0
+    
+    # Validation to prevent division-by-zero errors
+    if not keyword.isalpha():
+        raise ValueError("The secret keyword must contain letters only!")
+
+    for char in text:
+        if char.isalpha():
+            # Get the current character of the key and calculate its shift (0-25)
+            key_char = keyword[key_index % len(keyword)]
+            shift = ord(key_char) - 65
+            
+            # If decrypting, reverse the shift direction
+            if mode == 'decrypt':
+                shift = -shift
+            
+            # Process Uppercase characters (ASCII 65-90)
+            if char.isupper():
+                processed_char = chr((ord(char) - 65 + shift) % 26 + 65)
+                result.append(processed_char)
+            # Process Lowercase characters (ASCII 97-122)
+            elif char.islower():
+                processed_char = chr((ord(char) - 97 + shift) % 26 + 97)
+                result.append(processed_char)
+                
+            # Move to the next letter in our keyword
+            key_index += 1
+        else:
+            # Leave spaces, numbers, and punctuation completely untouched
+            result.append(char)
+            
+    return "".join(result)
+
+# --- Interactive Terminal Loop ---
+if __name__ == "__main__":
+    print("--- Local Vigenère Cipher Engine ---")
+    user_message = input("Enter the message to process: ")
+    secret_key   = input("Enter your secret keyword: ")
+    
+    # 1. Execute Encryption
+    ciphertext = vigenere_cipher(user_message, secret_key, mode='encrypt')
+    print(f"\n🔒 Ciphertext: {ciphertext}")
+    
+    # 2. Execute Decryption
+    plaintext = vigenere_cipher(ciphertext, secret_key, mode='decrypt')
+    print(f"🔓 Decrypted:  {plaintext}")

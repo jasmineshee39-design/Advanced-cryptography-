@@ -1,0 +1,31 @@
+import numpy as np
+from scipy import stats
+
+def monobit_test(binary_sequence):
+    # Convert string of bits to a list of 1s and -1s
+    n = len(binary_sequence)
+    plus_minus_sequence = [1 if int(bit) == 1 else -1 for bit in binary_sequence]
+    
+    # Calculate the sum
+    S_n = sum(plus_minus_sequence)
+    
+    # Compute the test statistic
+    s_obs = abs(S_n) / np.sqrt(n)
+    
+    # Calculate p-value
+    p_value = stats.erfc(s_obs / np.sqrt(2))
+    
+    print(f"--- Monobit Test Results ---")
+    print(f"Observed Sum: {S_n}")
+    print(f"P-value: {p_value:.6f}")
+    
+    # If p-value >= 0.01, the sequence is considered random
+    if p_value >= 0.01:
+        print("Result: PASS (Sequence appears random)")
+    else:
+        print("Result: FAIL (Sequence is non-random)")
+
+# Example: Testing a 100-bit string
+# In real testing, you'll want at least 100,000+ bits.
+sample_bits = "1100100100001111110110101010001000100001011010001100001000110100110001001100011001100010100010111000"
+monobit_test(sample_bits)
