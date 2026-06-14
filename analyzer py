@@ -1,0 +1,44 @@
+# analyzer.py
+import math
+from cipher_engine import encrypt_block, encrypt_string
+
+class BlockCipherAnalyzer:
+    def __init__(self, keys=[0xAB, 0x3C, 0xF0]):
+        self.keys = keys
+
+    def test_avalanche_effect(self, rounds=3, use_weak=False):
+        """
+        Tests the Strict Avalanche Criterion (SAC). Changing 1 bit of plaintext
+        should ideally flip 50% (4 bits) of our 8-bit cipher block.
+        """
+        print(f"\n[*] Evaluating Avalanche Effect (Rounds: {rounds}, Weak Mode: {use_weak})...")
+        base_plaintext = 0b01001000  # Character 'H'
+        base_ciphertext = encrypt_block(base_plaintext, self.keys, rounds, use_weak)
+        
+        total_bits_flipped = 0
+        iterations = 8  # Test flipping every single bit position in the 8-bit block
+        
+        for bit_pos in range(8):
+            # Create a mutated plaintext with exactly 1 bit flipped
+            mutated_plaintext = base_plaintext ^ (1 << bit_pos)
+            mutated_ciphertext = encrypt_block(mutated_plaintext, self.keys, rounds, use_weak)
+            
+            # Compute XOR difference between ciphertexts
+            diff = base_ciphertext ^ mutated_ciphertext
+            # Count the total number of flipped bits (Hamming Distance)
+            bits_flipped = bin(diff).count('1')
+            total_bits_flipped += bits_flipped
+            
+        avg_flipped = total_bits_flipped / iterations
+        avalanche_percentage = (avg_flipped / 8) * 100
+        
+        print(f" -> Average bits flipped per 1-bit change: {avg_flipped:.2f} / 8 bits")
+        print(f" -> Avalanche Effect Score: {avalanche_percentage:.2f}%")
+        
+        # Security Rating Logic
+        if 45.0 <= avalanche_percentage <= 55.0:
+            return "EXCELLENT (Optimal Diffusion)"
+        elif 30.0 <= avalanche_percentage < 45.0 or 55.0 < avalanche_percentage <= 70.0:
+            return "MARGINAL (Weak Diffusion, patterns might leak)"
+        else:
+            return "CRITICAL FAILURE (Linear/Predictable)

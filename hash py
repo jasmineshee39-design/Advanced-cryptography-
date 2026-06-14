@@ -1,0 +1,70 @@
+import hashlib
+
+def generate_sha256(text_input):
+    """Generates a standard SHA-256 hash from a string input."""
+    # 1. Convert the string into raw bytes using UTF-8 encoding
+    data_bytes = text_input.encode('utf-8')
+    
+    # 2. Feed the bytes into the SHA-256 hash object
+    hash_object = hashlib.sha256(data_bytes)
+    
+    # 3. Return the fixed-length hexadecimal string representation
+    return hash_object.hexdigest()
+
+
+def hash_large_file(file_path):
+    """
+    Streams a large file in chunks to compute its hash without 
+    overloading your computer's RAM memory footprint.
+    """
+    # Use SHA-512 for enhanced security or file integrity verification
+    hash_object = hashlib.sha512()
+    
+    try:
+        with open(file_path, "rb") as f:
+            # Read the file in small 4096-byte blocks
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_object.update(chunk)
+        return hash_object.hexdigest()
+    except FileNotFoundError:
+        return None
+
+
+def secure_password_hash(password, salt):
+    """
+    Applies a 'Salt' to a password hash. Salting appends unique random data
+    to the password, completely neutralizing pre-computed Rainbow Table attacks.
+    """
+    # Combine password bytes and unique salt bytes
+    salted_data = password.encode('utf-8') + salt
+    
+    # Generate the salted digest
+    return hashlib.sha256(salted_data).hexdigest()
+
+
+# --- Execution Framework ---
+if __name__ == "__main__":
+    print("=== Secure Hash Functions Suite ===")
+    
+    # 1. Basic Text Hashing (SHA-256)
+    message = "Secure this message layout."
+    hash_output = generate_sha256(message)
+    print(f"Original Text: '{message}'")
+    print(f"SHA-256 Digest: {hash_output}")
+    print(f"Digest Length: {len(hash_output)} characters (256 bits)\n")
+    
+    # 2. The Avalanche Test (Changing 1 minor character)
+    mutated_message = "secure this message layout." # Changed 'S' to 's'
+    mutated_hash = generate_sha256(mutated_message)
+    print(f"Mutated Text : '{mutated_message}'")
+    print(f"SHA-256 Digest: {mutated_hash}")
+    print("Notice that a 1-character case change yields a completely unrecognizably different hash output!\n")
+    
+    # 3. Secure Password Salting
+    user_password = "MySuperSecretPassword123"
+    # A cryptographically secure random 16-byte salt
+    import os
+    unique_user_salt = os.urandom(16) 
+    
+    salted_hash = secure_password_hash(user_password, unique_user_salt)
+    print(f"Salted Password Hash: {salted_hash}")

@@ -1,0 +1,64 @@
+# --- Modified SPN Configuration ---
+S_BOX = [4, 10, 9, 2, 13, 8, 0, 14, 6, 11, 1, 12, 7, 15, 5, 3]
+P_BOX = [0, 4, 1, 5, 2, 6, 3, 7]
+
+# NEW: Added a list of keys for a 3-round encryption process
+# Each round requires its own 8-bit key
+ROUND_KEYS = [0xAB, 0x3C, 0xF0] 
+
+
+def substitute(block_8bit):
+    """Splits 8-bit block into two 4-bit nibbles and applies S-Box."""
+    nibble_left = (block_8bit >> 4) & 0x0F
+    nibble_right = block_8bit & 0x0F
+    return (S_BOX[nibble_left] << 4) | S_BOX[nibble_right]
+
+
+def permute(block_8bit):
+    """Permutes the bits of an 8-bit block."""
+    permuted_block = 0
+    for original_pos, target_pos in enumerate(P_BOX):
+        bit = (block_8bit >> original_pos) & 1
+        permuted_block |= (bit << target_pos)
+    return permuted_block
+
+
+def encrypt_byte(byte_val, keys):
+    """Encrypts a single byte through multiple rounds of Key Mixing, Sub, and Perm."""
+    current_block = byte_val
+    
+    # Loop through each round key
+    for round_idx, key in enumerate(keys):
+        # 1. Key Mixing Layer (XOR)
+        current_block = current_block ^ key
+        
+        # 2. Substitution Layer
+        current_block = substitute(current_block)
+        
+        # 3. Permutation Layer (Typically omitted in the very last round of ciphers like AES)
+        if round_idx < len(keys) - 1:
+            current_block = permute(current_block)
+            
+    return current_block
+
+
+def encrypt_spn_modified(plaintext_str, keys):
+    """Processes the entire plaintext string using the updated multi-round execution."""
+    ciphertext_bytes = []
+    
+    for char in plaintext_str:
+        original_byte = ord(char)
+        cipher_byte = encrypt_byte(original_byte, keys)
+        ciphertext_bytes.append(cipher_byte)
+        
+    return bytes(ciphertext_bytes)
+
+
+# --- Execution ---
+if __name__ == "__main__":
+    print("=== Modified Multi-Round SPN Engine ===")
+    user_input = input("Enter plaintext: ")
+    
+    if user_input:
+        cipher_output = encrypt_spn_modified(user_input, ROUND_KEYS)
+        print(f"\nCiphertext Hex: {cipher_output.hex().upper()}")

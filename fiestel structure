@@ -1,0 +1,72 @@
+# --- Feistel Cipher Configuration ---
+# Two simple 8-bit subkeys for our 2-round architecture
+ROUND_KEYS = [0x5A, 0x3C] 
+
+def round_function_F(right_half, subkey):
+    """
+    The internal Round Function (F). 
+    In a Feistel cipher, this function does NOT need to be reversible.
+    We will use a simple bitwise XOR and addition for demonstration.
+    """
+    return (right_half ^ subkey) & 0xFF
+
+
+def feistel_cycle(left_half, right_half, subkeys):
+    """
+    Executes the Feistel Network rounds over the split data blocks.
+    """
+    L = left_half
+    R = right_half
+    
+    num_rounds = len(subkeys)
+    for i in range(num_rounds):
+        # Calculate the internal F function output
+        f_output = round_function_F(R, subkeys[i])
+        
+        # New Right is Old Left XORed with the F-function output
+        next_R = L ^ f_output
+        
+        # New Left is simply the Old Right (Passed through unchanged)
+        next_L = R
+        
+        # Update values for the next round loop
+        L = next_L
+        R = next_R
+        print(f"  Round {i+1} Output -> Left: {L:08b} (0x{L:02X}) | Right: {R:08b} (0x{R:02X})")
+        
+    # Final Round Swap Cancellation: Traditional Feistel undoes the final swap
+    return R, L
+
+
+# --- Main Operational Runtime ---
+if __name__ == "__main__":
+    print("=== 16-Bit Feistel Network Engine ===")
+    
+    # 1. Prepare input payload (2 characters = 16 bits)
+    plaintext = "HI"
+    print(f"Original Text: {plaintext}")
+    
+    # Split the characters into 8-bit Left and Right halves
+    L_initial = ord(plaintext[0])
+    R_initial = ord(plaintext[1])
+    print(f"Initial State -> Left: {L_initial:08b} ('{plaintext[0]}') | Right: {R_initial:08b} ('{plaintext[1]}')\n")
+    
+    # 2. RUN ENCRYPTION
+    print("--- Running Encryption Phase ---")
+    # Subkeys are applied in normal order: [Key1, Key2]
+    cipher_L, cipher_R = feistel_cycle(L_initial, R_initial, ROUND_KEYS)
+    print(f"Final Ciphertext State -> Left Hex: 0x{cipher_L:02X} | Right Hex: 0x{cipher_R:02X}\n")
+    
+    # 3. RUN DECRYPTION
+    print("--- Running Decryption Phase ---")
+    # CRITICAL FEISTEL RULE: Decryption uses the exact same algorithm structure, 
+    # but the subkeys MUST be fed in reverse order: [Key2, Key1]
+    reversed_keys = ROUND_KEYS[::-1]
+    
+    decrypted_L, decrypted_R = feistel_cycle(cipher_L, cipher_R, reversed_keys)
+    
+    # Convert the processed bytes back into string characters
+    recovered_text = chr(decrypted_L) + chr(decrypted_R)
+    print(f"\n================ Result ================")
+    print(f"Decrypted Hex Values: 0x{decrypted_L:02X}, 0x{decrypted_R:02X}")
+    print(f"Recovered Plaintext : '{recovered_text}'")

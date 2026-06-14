@@ -1,0 +1,50 @@
+def compute_differences(text1, text2):
+    # Ensure strings are processed at equal lengths by padding the shorter one
+    max_len = max(len(text1), len(text2))
+    text1_padded = text1.ljust(max_len, '\0')
+    text2_padded = text2.ljust(max_len, '\0')
+    
+    print(f"\n{'='*20} ANALYSIS REPORT {'='*20}")
+    print(f"Input 1: '{text1}'")
+    print(f"Input 2: '{text2}'\n")
+    
+    print(f"{'Char 1':<8} | {'Char 2':<8} | {'Binary 1':<10} | {'Binary 2':<10} | {'XOR Diff (Hex)':<14} | {'Bitwise XOR Result'}")
+    print("-" * 78)
+    
+    total_flipped_bits = 0
+    
+    # Iterate through characters and compare byte/bit structures
+    for c1, c2 in zip(text1_padded, text2_padded):
+        byte1 = ord(c1)
+        byte2 = ord(c2)
+        
+        # Compute the cryptographic difference using XOR
+        xor_diff = byte1 ^ byte2
+        
+        # Count how many individual bits are different (Hamming Distance)
+        flipped_bits = bin(xor_diff).count('1')
+        total_flipped_bits += flipped_bits
+        
+        # Format unprintable padding characters for clean display
+        disp_c1 = repr(c1) if byte1 == 0 else c1
+        disp_c2 = repr(c2) if byte2 == 0 else c2
+        
+        print(f"{disp_c1:<8} | {disp_c2:<8} | {byte1:08b} | {byte2:08b} | 0x{xor_diff:02X:<12} | {xor_diff:08b} ({flipped_bits} bits diff)")
+
+    print("-" * 78)
+    print(f"Total Bitwise Differences (Hamming Distance): {total_flipped_bits} bits are different.")
+    
+    # Calculate Avalanche Effect percentage if inputs are the same length
+    if len(text1) == len(text2) and len(text1) > 0:
+        total_possible_bits = max_len * 8
+        avalanche_percentage = (total_flipped_bits / total_possible_bits) * 100
+        print(f"Avalanche Propagation Variance: {avalanche_percentage:.2f}% of the total bit layout changed.")
+
+# --- Runtime Entry Point ---
+if __name__ == "__main__":
+    print("=== Cryptographic Plaintext Difference Analyzer ===")
+    
+    # Accept inputs from the user via the terminal console
+    plaintext_1 = input("Enter the first plaintext string : ")
+    plaintext_2 = input("Enter the second plaintext string: ")
+    compute_differences(plaintext_1, plaintext_2)

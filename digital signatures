@@ -1,0 +1,86 @@
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.exceptions import InvalidSignature
+
+class DigitalSignatureLab:
+    @staticmethod
+    def generate_key_pair():
+        """Generates a secure RSA Private and Public key pair (2048-bit)."""
+        private_key = rsa.generate_private_key(
+            public_key_exponent=65537,
+            key_size=2048
+        )
+        public_key = private_key.public_key()
+        return private_key, public_key
+
+    @staticmethod
+    def sign_message(message: str, private_key) -> bytes:
+        """Signs a plaintext message using the sender's Private Key."""
+        message_bytes = message.encode('utf-8')
+        
+        # Sign the message using PSS padding and a secure SHA-256 hash
+        signature = private_key.sign(
+            message_bytes,
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256()
+        )
+        return signature
+
+    @staticmethod
+    def verify_signature(message: str, signature: bytes, public_key) -> bool:
+        """Verifies a signature using the corresponding Public Key."""
+        message_bytes = message.encode('utf-8')
+        
+        try:
+            # The verify function implicitly returns None if successful, 
+            # or raises an InvalidSignature exception if authentication fails.
+            public_key.verify(
+                signature,
+                message_bytes,
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                ),
+                hashes.SHA256()
+            )
+            return True
+        except InvalidSignature:
+            return False
+
+
+# --- Simulation Workflow Execution ---
+if __name__ == "__main__":
+    print("=== Cryptographic Digital Signature Simulation ===")
+    
+    # 1. Setup Identities (Alice generates her keys)
+    print("\n[+] Generating secure 2048-bit RSA key pair...")
+    alice_private_key, alice_public_key = DigitalSignatureLab.generate_key_pair()
+    print(" -> Key pair successfully initialized.")
+
+    # 2. Alice Signs a Financial Transaction Document
+    original_document = "Transfer $500.00 to account routing layout #123456"
+    print(f"\n[+] Alice's Original Document Content:\n    '{original_document}'")
+    
+    print("[*] Computing SHA-256 digest and generating digital signature payload...")
+    doc_signature = DigitalSignatureLab.sign_message(original_document, alice_private_key)
+    print(f" -> Signature Created (Hex): {doc_signature.hex()[:60]}... [Truncated]")
+
+    # 3. Secure Verification (Bob validates the signature)
+    print("\n" + "="*50)
+    print("[TEST 1] Bob verifies the genuine document using Alice's Public Key...")
+    
+    is_valid_1 = DigitalSignatureLab.verify_signature(original_document, doc_signature, alice_public_key)
+    print(f" -> Verification Status: {'SUCCESS ✅ (Document is Authentic)' if is_valid_1 else 'FAILED ❌'}")
+
+    # 4. Adversarial Attack Scenario (An interceptor tampers with the text payload)
+    print("\n[TEST 2] A malicious attacker intercepts the file and tampers with the content...")
+    tampered_document = "Transfer $5000.00 to account routing layout #123456" # Changed $500 to $5000
+    print(f"    Tampered Text: '{tampered_document}'")
+    
+    print("[*] Attempting validation check against the tampered string payload...")
+    is_valid_2 = DigitalSignatureLab.verify_signature(tampered_document, doc_signature, alice_public_key)
+    print(f" -> Verification Status: {'SUCCESS ✅' if is_valid_2 else 'CRITICAL FAILURE ❌ (Tampering Detected!)'}")
