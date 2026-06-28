@@ -1,0 +1,66 @@
+def generate_public_key(prime_p, base_g, private_key):
+    """
+    Computes (base_g ^ private_key) % prime_p
+    Using Python's built-in pow(base, exp, mod) for efficiency
+    """
+    return pow(base_g, private_key, prime_p)
+
+
+def compute_shared_secret(public_key, private_key, prime_p):
+    """
+    Computes (public_key ^ private_key) % prime_p
+    """
+    return pow(public_key, private_key, prime_p)
+
+
+def main():
+    print("--- Diffie-Hellman Key Exchange Setup ---")
+
+    # 1. Accept public values p and g (or q)
+    # Note: In standard cryptography, 'p' is a large prime and 'g' (or 'q') is the generator.
+    try:
+        p = int(input("Enter a public prime value (p): "))
+        g = int(
+            input(
+                "Enter a public base/generator value (g or q, smaller than p): "
+            )
+        )
+    except ValueError:
+        print("Invalid input. Please enter integers only.")
+        return
+
+    print("\n--- User Key Generation ---")
+
+    # 2. Users choose their private keys
+    # Alice's Turn
+    print("\n[Alice's Turn]")
+    alice_private = int(input("Alice, enter your private key: "))
+    alice_public = generate_public_key(p, g, alice_private)
+    print(f"Alice's Public Key (shared openly): {alice_public}")
+
+    # Bob's Turn
+    print("\n[Bob's Turn]")
+    bob_private = int(input("Bob, enter your private key: "))
+    bob_public = generate_public_key(p, g, bob_private)
+    print(f"Bob's Public Key (shared openly): {bob_public}")
+
+    print("\n--- Exchanging Keys & Computing Shared Secret ---")
+
+    # 3. Compute the shared secret using the received public keys
+    alice_secret = compute_shared_secret(bob_public, alice_private, p)
+    bob_secret = compute_shared_secret(alice_public, bob_private, p)
+
+    # 4. Display results to verify they match
+    print(f"Alice's computed shared secret: {alice_secret}")
+    print(f"Bob's computed shared secret: {bob_secret}")
+
+    if alice_secret == bob_secret:
+        print(
+            "\nSuccess! Both users have generated the exact same shared secret."
+        )
+    else:
+        print("\nError: The shared secrets do not match. Check your math/inputs.")
+
+
+if __name__ == "__main__":
+    main()

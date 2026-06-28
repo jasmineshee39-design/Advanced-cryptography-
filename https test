@@ -1,0 +1,78 @@
+import ssl
+import socket
+import urllib3
+import requests
+
+# Disable annoying console warnings when we intentionally test an insecure site later
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+def test_secure_https(url):
+    """Attempts to make a standard, fully verified HTTPS request."""
+    print(f"\n[Test 1] Attempting Secure HTTPS Connection to: {url}")
+    try:
+        # requests verifies the SSL certificate automatically by default
+        response = requests.get(url, timeout=5)
+        print(f"-> Success! Status Code: {response.status_code}")
+        print(
+            f"-> Connection is secure. Server Headers indicate: {response.headers.get('Server', 'Unknown')}"
+        )
+    except requests.exceptions.SSLError as e:
+        print(f"-> SSL Verification Failed! The certificate cannot be trusted.")
+        print(f"   Error Details: {e}")
+    except Exception as e:
+        print(f"-> Connection Error: {e}")
+
+
+def inspect_tls_certificate(hostname):
+    """Extracts raw SSL/TLS metadata from the host to verify the cipher and protocol version."""
+    print(f"\n[Test 2] Inspecting TLS Handshake Metadata for: {hostname}")
+    context = ssl.create_default_context()
+
+    try:
+        with socket.create_connection((hostname, 443), timeout=5) as sock:
+            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+                cipher_info = ssock.cipher()
+                tls_version = ssock.version()
+                print(f"-> Handshake Protocol: {tls_version}")
+                print(f"-> Encryption Cipher Suite: {cipher_info[0]}")
+    except Exception as e:
+        print(f"-> Failed to extract TLS metadata: {e}")
+
+
+def test_insecure_https():
+    """Demonstrates how the client handles an intentionally invalid/expired SSL certificate."""
+    # badssl.com is a secure public utility created specifically to test bad SSL implementations
+    expired_url = "https://expired.badssl.com/"
+    print(f"\n[Test 3] Attempting Connection to Bad/Expired SSL Site: {expired_url}")
+
+    # Step A: Attempt a strict connection (Should fail)
+    try:
+        print("-> Attempting connection with standard verification ON...")
+        requests.get(expired_url, timeout=5)
+    except requests.exceptions.SSLError:
+        print("-> [Expected Behavior] Requests blocked the connection safely due to an expired certificate.")
+
+    # Step B: Force bypass verification (Use with caution!)
+    try:
+        print("-> Attempting connection with verification BYPASSED (verify=False)...")
+        response = requests.get(expired_url, verify=False, timeout=5)
+        print(f"-> Warning! Forcefully connected. Status Code: {response.status_code}")
+    except Exception as e:
+        print(f"-> Connection failed anyway: {e}")
+
+
+if __name__ == "__main__":
+    print("=== HTTPS Communication Testing Suite ===")
+
+    # Test a production-grade secure site
+    target_host = "www.google.com"
+    test_secure_https(f"https://{target_host}")
+
+    # Inspect the encryption strength of the handshake
+    inspect_tls_certificate(target_host)
+
+    # Test security failure conditions
+    test_insecure_https()
+
+    print("\n=== Testing Complete ===")

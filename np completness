@@ -1,0 +1,78 @@
+import itertools
+import time
+
+
+# ==========================================
+# 1. THE "NP" PROOF: VERIFYING A SOLUTION
+# ==========================================
+def verify_solution(subset, target_sum):
+    """
+    Verifying a solution is incredibly fast.
+    This takes O(n) time, proving the problem is in NP.
+    """
+    return sum(subset) == target_sum
+
+
+# ==========================================
+# 2. THE "NP-COMPLETE" PROBLEM: SOLVING IT
+# ==========================================
+def solve_subset_sum(numbers, target_sum):
+    """
+    Finding the solution from scratch is slow.
+    This brute-force approach takes O(2^n) exponential time.
+    """
+    n = len(numbers)
+    # Check every possible combination (subset) of the numbers
+    for r in range(1, n + 1):
+        for subset in itertools.combinations(numbers, r):
+            if sum(subset) == target_sum:
+                return list(subset)  # Return the first matching subset found
+    return None
+
+
+# ==========================================
+# MAIN EXECUTION
+# ==========================================
+def main():
+    # A set of numbers and a target we want them to add up to
+    input_set = [4, 12, 23, 7, 14, 38, 9, 21, 44, 2]
+    target = 59
+
+    print("--- NP-Completeness Demo (Subset Sum Problem) ---")
+    print(f"Input Set: {input_set}")
+    print(f"Target Sum to find: {target}\n")
+
+    # --- Step 1: Solving (The Hard Part) ---
+    print("[Solving] Searching for a valid subset...")
+    start_time = time.perf_counter()
+
+    solution = solve_subset_sum(input_set, target)
+
+    end_time = time.perf_counter()
+
+    if solution:
+        print(f"-> Found Solution: {solution}")
+        print(f"-> Solving took: {end_time - start_time:.6f} seconds\n")
+    else:
+        print("-> No solution exists.")
+        return
+
+    # --- Step 2: Verifying (The NP/Easy Part) ---
+    print(
+        "[Verifying] Giving the solution to a checker to verify it instantly..."
+    )
+    start_verify = time.perf_counter()
+
+    # Imagine an untrusted party gave us `solution`. We check it instantly:
+    is_valid = verify_solution(solution, target)
+
+    end_verify = time.perf_counter()
+
+    print(f"-> Is the solution valid? {is_valid}")
+    print(f"-> Verifying took: {end_verify - start_verify:.6f} seconds")
+
+    print("\nNotice how much FASTER verification is than finding the solution!")
+
+
+if __name__ == "__main__":
+    main()

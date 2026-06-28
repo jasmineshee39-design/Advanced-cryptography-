@@ -1,0 +1,74 @@
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives import hashes, serialization
+
+
+def generate_keys():
+    """Generates a private and public key pair."""
+    # 65537 is a standard public exponent. 2048 bits is the minimum secure key size.
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    public_key = private_key.public_key()
+    return private_key, public_key
+
+
+def encrypt_message(message: str, public_key) -> bytes:
+    """Encrypts a string message using the public key."""
+    # Convert string message to bytes
+    message_bytes = message.encode("utf-8")
+
+    # Encrypt using OAEP padding (highly secure standard) and SHA-256
+    ciphertext = public_key.encrypt(
+        message_bytes,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None,
+        ),
+    )
+    return ciphertext
+
+
+def decrypt_message(ciphertext: bytes, private_key) -> str:
+    """Decrypts a ciphertext using the private key."""
+    # Decrypt using the exact same padding settings used during encryption
+    decrypted_bytes = private_key.decrypt(
+        ciphertext,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None,
+        ),
+    )
+    # Convert bytes back into a string
+    return decrypted_bytes.decode("utf-8")
+
+
+def main():
+    print("--- Asymmetric Cryptography Demonstration (RSA) ---\n")
+
+    # 1. Generate the keys
+    print("[System] Generating RSA 2048-bit key pair...")
+    private_key, public_key = generate_keys()
+    print("[System] Keys generated successfully!\n")
+
+    # 2. Get user input
+    secret_message = input("Enter a secret message to encrypt: ")
+
+    # 3. Encrypt the message
+    # In practice, anyone with access to your Public Key can perform this step
+    print("\n[Action] Encrypting message with the Public Key...")
+    encrypted_data = encrypt_message(secret_message, public_key)
+
+    # Print the ciphertext in Hexadecimal format so it's readable
+    print(f"Ciphertext (Hex): {encrypted_data.hex()[:60]}...[truncated]")
+
+    # 4. Decrypt the message
+    # ONLY the holder of the corresponding Private Key can perform this step
+    print("\n[Action] Decrypting ciphertext with the Private Key...")
+    decrypted_message = decrypt_message(encrypted_data, private_key)
+
+    # 5. Output Results
+    print(f"\n[Success] Original Decrypted Message: '{decrypted_message}'")
+
+
+if __name__ == "__main__":
+    main()
